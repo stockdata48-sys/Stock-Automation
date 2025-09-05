@@ -1,0 +1,6 @@
+# Salesforce Data Loader Mapping File
+# Maps CSV columns to Salesforce fields
+
+StockData Name=Name
+PreviousClose=Previous_Close__c
+Change=Change__c
