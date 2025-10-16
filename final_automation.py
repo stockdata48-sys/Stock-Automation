@@ -71,7 +71,7 @@ def convert_excel_to_data(excel_file):
     return records if records else None
 
 def upload_to_salesforce(records):
-    """Upload records to Salesforce Stock_Data__c object"""
+    """Upload records to Salesforce StockData__c object"""
     try:
         # Use environment variables instead of config.properties
         username = os.environ.get("SF_USERNAME")
