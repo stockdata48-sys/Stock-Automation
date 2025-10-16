@@ -2,5 +2,5 @@
 # Maps CSV columns to Salesforce fields
 
 StockData Name=Name
-PreviousClose=Previous_Close__c
+PreviousClose=PreviousClose__c
 Change=Change__c
