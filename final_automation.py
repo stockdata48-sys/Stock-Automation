@@ -95,7 +95,7 @@ def upload_to_salesforce(records):
         error_count = 0
         for i in range(0, len(records), batch_size):
             batch = records[i:i + batch_size]
-            result = sf.bulk.Stock_Data__c.upsert(batch, 'Name', batch_size=len(batch))
+            result = sf.bulk.StockData__c.upsert(batch, 'Name', batch_size=len(batch))
             for j, res in enumerate(result):
                 if res.get('success', False):
                     success_count += 1
@@ -115,7 +115,7 @@ def save_csv_backup(records):
 
 # ---------------------- Main function ----------------------
 
-def main(file_id="1PMmWg3k2If_qxKG3tUjo5oKWxgvbcjMH"):
+def main(file_id="1WuTVktuDnJh3UECy4EzeaAlH4Bm6pAY7"):
     try:
         excel_file = get_excel_from_drive(file_id)
         records = convert_excel_to_data(excel_file)
