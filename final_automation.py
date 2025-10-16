@@ -201,7 +201,7 @@ def convert_excel_to_data(excel_file):
             change_val = float(row[change_col]) if change_col and not pd.isna(row.get(change_col, 0)) else 0.0
             records.append({
                 'Name': stock_name,
-                'Previous_Close__c': prev_close,
+                'PreviousClose__c': prev_close,
                 'Change__c': change_val
             })
         except Exception as e:
