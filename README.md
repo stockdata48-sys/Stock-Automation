@@ -1,4 +1,4 @@
-# 📊 Stock Data Automation System
+#  Stock Data Automation System
 
 ## What Does This Do?
 
@@ -6,7 +6,7 @@ This project automatically updates stock information in Salesforce with just one
 
 ---
 
-## 🎯 How It Works (Simple Version)
+##  How It Works (Simple Version)
 
 ```
 Google Drive Spreadsheet → Button Click in Salesforce → Data Automatically Updates
@@ -20,7 +20,7 @@ Google Drive Spreadsheet → Button Click in Salesforce → Data Automatically U
 
 ---
 
-## 🔧 What's Included
+##  What's Included
 
 ### Main Files
 
@@ -42,7 +42,7 @@ Google Drive Spreadsheet → Button Click in Salesforce → Data Automatically U
 
 ---
 
-## 📋 What Information Gets Updated
+##  What Information Gets Updated
 
 For each stock, the system updates:
 - **Stock Name** (like "AAOI-SD" or "TSLA-SD")
@@ -51,7 +51,7 @@ For each stock, the system updates:
 
 ---
 
-## 🚀 Setup Guide
+##  Setup Guide
 
 ### Step 1: Deploy to Render
 1. Upload your code to GitHub
@@ -95,7 +95,7 @@ In Render's dashboard, add these environment variables (think of them as locked 
 
 ---
 
-## 🎬 How to Use It
+##  How to Use It
 
 1. **Update the Excel file** on Google Drive with new stock prices
 2. **Go to any Stock Data record** in Salesforce
@@ -109,7 +109,7 @@ In Render's dashboard, add these environment variables (think of them as locked 
 
 ---
 
-## 🔒 Security Features
+##  Security Features
 
 - **API Key Protection**: Only requests with the correct API key (`150697`) can trigger the automation
 - **Environment Variables**: Your Salesforce password never appears in the code - it's stored securely in Render
@@ -117,7 +117,7 @@ In Render's dashboard, add these environment variables (think of them as locked 
 
 ---
 
-## 📊 Google Drive File Format
+##  Google Drive File Format
 
 Your Excel file should have a sheet named **"Nightly-Template-Template"** with these columns:
 
@@ -134,7 +134,7 @@ Your Excel file should have a sheet named **"Nightly-Template-Template"** with t
 
 ---
 
-## ⚠️ Troubleshooting
+##  Troubleshooting
 
 ### Button doesn't work?
 - Check that Render is still running (free tier sleeps after inactivity)
@@ -153,7 +153,7 @@ Your Excel file should have a sheet named **"Nightly-Template-Template"** with t
 
 ---
 
-## 🎓 Technical Details (For Developers)
+##  Technical Details (For Developers)
 
 - **Framework**: FastAPI (lightweight, modern Python web framework)
 - **Salesforce Integration**: simple-salesforce library with bulk upsert
@@ -163,7 +163,7 @@ Your Excel file should have a sheet named **"Nightly-Template-Template"** with t
 
 ---
 
-## 📞 Support
+##  Support
 
 If you run into issues:
 1. Check the Render logs for error messages
@@ -173,7 +173,7 @@ If you run into issues:
 
 ---
 
-## 📝 Notes
+##  Notes
 
 - The system processes up to 200 records per batch for optimal performance
 - Backup CSV files are saved with timestamps like `stockdata_backup_20250930_143022.csv`
