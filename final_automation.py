@@ -178,8 +178,6 @@
 
 
 
-
-
 import pandas as pd
 import os
 import re
@@ -192,13 +190,14 @@ import uuid
 # ---------------------- Helper functions ----------------------
 
 def get_excel_from_drive(file_id: str):
-    unique_filename = f"input_{uuid.uuid4().hex}.xlsx"
+    """Download Excel from Google Drive and save as a temp file"""
+    filename = f"input_{uuid.uuid4().hex}.xlsx"
     url = f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=xlsx"
     r = requests.get(url)
     r.raise_for_status()
-    with open(unique_filename, "wb") as f:
+    with open(filename, "wb") as f:
         f.write(r.content)
-    return unique_filename
+    return filename
 
 
 def clean_company_name(name):
@@ -242,7 +241,7 @@ def convert_excel_to_data(excel_file):
     if not stock_col or not prev_close_col:
         return None
 
-    # Prevent duplicate upserts
+    # Prevent duplicate upserts in same run
     df = df.drop_duplicates(subset=[stock_col])
 
     records = []
@@ -267,12 +266,6 @@ def convert_excel_to_data(excel_file):
     return records if records else None
 
 
-def save_csv_backup(records):
-    filename = f"stockdata_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    pd.DataFrame(records).to_csv(filename, index=False)
-    return filename
-
-
 def upload_to_salesforce(records):
     try:
         username = os.environ.get("SF_USERNAME")
@@ -292,7 +285,6 @@ def upload_to_salesforce(records):
         batch_size = 500
         success_count = 0
         error_count = 0
-        failed_rows = []
 
         for i in range(0, len(records), batch_size):
             batch = records[i:i + batch_size]
@@ -304,7 +296,7 @@ def upload_to_salesforce(records):
                 else:
                     error_count += 1
 
-                    # ✅ FIX: Properly parse Salesforce error objects
+                    # Parse Salesforce error objects safely
                     error_messages = []
                     for e in res.get("errors", []):
                         if isinstance(e, dict):
@@ -314,23 +306,17 @@ def upload_to_salesforce(records):
                         else:
                             error_messages.append(str(e))
 
-                    failed_rows.append({
-                        "row_index": i + j,
-                        "name": batch[j].get("Name"),
-                        "errors": "; ".join(error_messages)
-                    })
-
-        failed_csv = None
-        if failed_rows:
-            failed_csv = f"failed_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            pd.DataFrame(failed_rows).to_csv(failed_csv, index=False)
+                    # Log failed rows directly to Render logs
+                    print(
+                        f"FAILED ROW {i + j} | {batch[j].get('Name')} | {'; '.join(error_messages)}",
+                        flush=True
+                    )
 
         if error_count > 0:
             return {
                 "status": "partial_success",
                 "uploaded": success_count,
-                "failed": error_count,
-                "failed_records_file": failed_csv
+                "failed": error_count
             }
 
         return {
@@ -354,12 +340,12 @@ def main(file_id="1DPWARP9_7p0NoTNptsl7sxPvGekQYET6Jcw4BXYBu4I"):
         records = convert_excel_to_data(excel_file)
 
         if not records:
-            return {"status": "error", "message": "No valid records found"}
+            return {
+                "status": "error",
+                "message": "No valid records found"
+            }
 
-        backup_file = save_csv_backup(records)
-        result = upload_to_salesforce(records)
-        result["backup_file"] = backup_file
-        return result
+        return upload_to_salesforce(records)
 
     except Exception as e:
         return {
