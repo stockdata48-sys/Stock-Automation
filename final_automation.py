@@ -180,7 +180,6 @@
 
 
 
-
 import pandas as pd
 import os
 import re
@@ -193,7 +192,6 @@ import uuid
 # ---------------------- Helper functions ----------------------
 
 def get_excel_from_drive(file_id: str):
-    """Download Excel from Google Drive and save as a unique temp file"""
     unique_filename = f"input_{uuid.uuid4().hex}.xlsx"
     url = f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=xlsx"
     r = requests.get(url)
@@ -244,7 +242,7 @@ def convert_excel_to_data(excel_file):
     if not stock_col or not prev_close_col:
         return None
 
-    # Drop duplicate stocks
+    # Prevent duplicate upserts
     df = df.drop_duplicates(subset=[stock_col])
 
     records = []
@@ -281,7 +279,10 @@ def upload_to_salesforce(records):
         password_token = os.environ.get("SF_PASSWORD_TOKEN")
 
         if not username or not password_token:
-            return False, {"error": "Missing Salesforce credentials"}
+            return {
+                "status": "error",
+                "message": "Missing Salesforce credentials"
+            }
 
         password = password_token[:-25]
         token = password_token[-25:]
@@ -302,10 +303,21 @@ def upload_to_salesforce(records):
                     success_count += 1
                 else:
                     error_count += 1
+
+                    # ✅ FIX: Properly parse Salesforce error objects
+                    error_messages = []
+                    for e in res.get("errors", []):
+                        if isinstance(e, dict):
+                            error_messages.append(
+                                f"{e.get('statusCode')}: {e.get('message')} (fields: {e.get('fields')})"
+                            )
+                        else:
+                            error_messages.append(str(e))
+
                     failed_rows.append({
                         "row_index": i + j,
                         "name": batch[j].get("Name"),
-                        "errors": "; ".join(res.get("errors", []))
+                        "errors": "; ".join(error_messages)
                     })
 
         failed_csv = None
@@ -314,20 +326,20 @@ def upload_to_salesforce(records):
             pd.DataFrame(failed_rows).to_csv(failed_csv, index=False)
 
         if error_count > 0:
-            return False, {
+            return {
                 "status": "partial_success",
                 "uploaded": success_count,
                 "failed": error_count,
                 "failed_records_file": failed_csv
             }
 
-        return True, {
+        return {
             "status": "success",
             "uploaded": success_count
         }
 
     except Exception as e:
-        return False, {
+        return {
             "status": "error",
             "message": str(e),
             "trace": traceback.format_exc()
@@ -345,8 +357,7 @@ def main(file_id="1DPWARP9_7p0NoTNptsl7sxPvGekQYET6Jcw4BXYBu4I"):
             return {"status": "error", "message": "No valid records found"}
 
         backup_file = save_csv_backup(records)
-        success, result = upload_to_salesforce(records)
-
+        result = upload_to_salesforce(records)
         result["backup_file"] = backup_file
         return result
 
@@ -356,4 +367,3 @@ def main(file_id="1DPWARP9_7p0NoTNptsl7sxPvGekQYET6Jcw4BXYBu4I"):
             "message": str(e),
             "trace": traceback.format_exc()
         }
-
