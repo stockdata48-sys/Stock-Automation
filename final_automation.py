@@ -177,7 +177,6 @@
 # #         return {"status": "error", "message": str(e)}
 
 
-
 import pandas as pd
 import os
 import re
@@ -284,39 +283,54 @@ def upload_to_salesforce(records):
 
         batch_size = 500
         success_count = 0
-        error_count = 0
+        failures = []  # ⭐ NEW
 
         for i in range(0, len(records), batch_size):
             batch = records[i:i + batch_size]
             results = sf.bulk.StockData__c.upsert(batch, 'Name')
 
             for j, res in enumerate(results):
+                row_number = i + j + 1  # Excel-style row number
+
                 if res.get("success"):
                     success_count += 1
                 else:
-                    error_count += 1
-
                     # Parse Salesforce error objects safely
                     error_messages = []
+                    error_codes = []
+
                     for e in res.get("errors", []):
                         if isinstance(e, dict):
+                            error_codes.append(e.get("statusCode"))
                             error_messages.append(
-                                f"{e.get('statusCode')}: {e.get('message')} (fields: {e.get('fields')})"
+                                f"{e.get('message')} (fields: {e.get('fields')})"
                             )
                         else:
                             error_messages.append(str(e))
 
-                    # Log failed rows directly to Render logs
+                    combined_message = "; ".join(error_messages)
+                    combined_code = ", ".join(filter(None, error_codes))
+
+                    # Log to Render
                     print(
-                        f"FAILED ROW {i + j} | {batch[j].get('Name')} | {'; '.join(error_messages)}",
+                        f"FAILED ROW {row_number} | {batch[j].get('Name')} | {combined_code}: {combined_message}",
                         flush=True
                     )
 
-        if error_count > 0:
+                    # ⭐ Store failure for API response
+                    failures.append({
+                        "row": row_number,
+                        "name": batch[j].get("Name"),
+                        "code": combined_code,
+                        "message": combined_message
+                    })
+
+        if failures:
             return {
                 "status": "partial_success",
                 "uploaded": success_count,
-                "failed": error_count
+                "failed": len(failures),
+                "failures": failures
             }
 
         return {
